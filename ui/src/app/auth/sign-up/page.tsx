@@ -1,0 +1,127 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "react-hot-toast";
+import { Sparkles, Terminal, Activity, ArrowRight, User, Lock, Mail } from "lucide-react";
+
+export default function SignUpPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !email || !password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await authClient.signUp.email({
+        email,
+        password,
+        name,
+      });
+
+      if (error) {
+        toast.error(error.message || "Failed to create account");
+      } else {
+        toast.success("Account successfully created!");
+        window.location.href = "/workspaces"; // Redirect to workspace listing
+      }
+    } catch (err: any) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(244,63,94,0.1),transparent_70%)]" />
+      <div className="absolute top-10 left-10 flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-primary to-rose-600 text-white font-bold">
+          S
+        </div>
+        <span className="font-mono text-xs tracking-wider text-muted-foreground">SOLAS TRACE</span>
+      </div>
+
+      <div className="w-full max-w-md space-y-8 glass-panel border border-border rounded-2xl p-8 relative z-10 glass-card-glow">
+        <div className="text-center space-y-2">
+          <Activity className="h-10 w-10 text-primary mx-auto animate-pulse" />
+          <h2 className="text-xl font-bold font-mono tracking-wider uppercase text-foreground">
+            Create Account
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Get started with production-ready AI observability
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-1.5">
+              <User className="h-3 w-3" /> Full Name
+            </label>
+            <input
+              type="text"
+              placeholder="Alex Johnson"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full h-9 rounded-md border border-border bg-muted/30 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-1.5">
+              <Mail className="h-3 w-3" /> Email Address
+            </label>
+            <input
+              type="email"
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full h-9 rounded-md border border-border bg-muted/30 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-1.5">
+              <Lock className="h-3 w-3" /> Password
+            </label>
+            <input
+              type="password"
+              placeholder="Min. 8 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full h-9 rounded-md border border-border bg-muted/30 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary hover:bg-primary-foreground hover:bg-primary/90 text-white text-xs font-mono py-2.5 rounded-lg font-bold shadow-lg shadow-primary/20 flex items-center justify-center gap-1.5 transition-all"
+          >
+            {loading ? "Creating Account..." : "REGISTER"} <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </form>
+
+        <div className="text-center pt-4 border-t border-border/50">
+          <span className="text-[10px] text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/auth/sign-in" className="text-primary font-mono hover:underline">
+              Sign in
+            </Link>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,22 +1,46 @@
 {
-  "name": "solas-trace-frontend",
+  "name": "solas-trace-ui",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "dotenv -e ../.env -- next dev --turbopack",
+    "build": "dotenv -e ../.env -- next build",
+    "start": "dotenv -e ../.env -- next start",
+    "lint": "eslint . --ext .ts,.tsx",
+    "db:generate": "dotenv -e ../.env -- prisma generate --schema=../prisma/schema.prisma",
+    "db:push": "dotenv -e ../.env -- prisma db push --schema=../prisma/schema.prisma",
+    "db:migrate": "dotenv -e ../.env -- prisma migrate dev --schema=../prisma/schema.prisma",
+    "db:studio": "dotenv -e ../.env -- prisma studio --schema=../prisma/schema.prisma"
   },
   "dependencies": {
-    "lucide-react": "^0.300.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@prisma/client": "^5.22.0",
+    "@tanstack/react-query": "^5.62.0",
+    "better-auth": "^1.6.11",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^11.15.0",
+    "lucide-react": "^0.468.0",
+    "next": "^15.3.0",
+    "next-themes": "^0.4.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.0",
+    "react-hot-toast": "^2.5.2",
+    "react-resizable-panels": "^2.1.7",
+    "recharts": "^2.15.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.43",
-    "@types/react-dom": "^18.2.17",
-    "@vitejs/plugin-react": "^4.2.1",
-    "vite": "^5.0.10"
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.5.2",
+    "dotenv-cli": "^8.0.0",
+    "postcss": "^8.5.16",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^5.7.0"
   }
 }

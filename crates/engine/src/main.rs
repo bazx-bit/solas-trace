@@ -20,6 +20,9 @@ use solas_trace_engine::{
 
 #[tokio::main]
 async fn main() {
+    // Load .env file
+    dotenvy::dotenv().ok();
+
     // 1. Initialize logging
     tracing_subscriber::registry()
         .with(
@@ -76,10 +79,11 @@ async fn main() {
         .with_state(state);
 
     // 6. Start server
-    let port = std::env::var("PORT")
-        .unwrap_or_else(|_| "8080".to_string())
+    let port = std::env::var("SOLAS_PORT")
+        .or_else(|_| std::env::var("PORT"))
+        .unwrap_or_else(|_| "8000".to_string())
         .parse::<u16>()
-        .unwrap_or(8080);
+        .unwrap_or(8000);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     info!("Solas Trace listening on {}", addr);

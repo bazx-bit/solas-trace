@@ -7,8 +7,8 @@ use axum::{
 use bytes::Bytes;
 use http_body_util::BodyExt;
 use reqwest::Client;
-use serde_json::Value;
-use sqlx::SqlitePool;
+use serde_json::{json, Value};
+use sqlx::AnyPool;
 use std::sync::Arc;
 use tokio::time::Instant;
 use tracing::{error, info};
@@ -16,7 +16,7 @@ use uuid::Uuid;
 use chrono::Utc;
 
 pub struct AppState {
-    pub db: SqlitePool,
+    pub db: AnyPool,
     pub http_client: Client,
 }
 
@@ -94,6 +94,7 @@ pub async fn openai_proxy_handler(
 
     if is_streaming {
         let db_clone = state.db.clone();
+        let client_clone = state.http_client.clone();
         let trace_id_clone = trace_id.clone();
         let span_id_clone = span_id.clone();
         let parent_span_id_clone = parent_span_id.clone();
@@ -103,6 +104,7 @@ pub async fn openai_proxy_handler(
             let end_time = Utc::now();
             save_trace_and_span(
                 &db_clone,
+                Some(client_clone),
                 &trace_id_clone,
                 &span_id_clone,
                 parent_span_id_clone.as_deref(),
@@ -146,6 +148,7 @@ pub async fn openai_proxy_handler(
     let end_time = Utc::now();
     
     let db_clone = state.db.clone();
+    let client_clone = state.http_client.clone();
     let trace_id_clone = trace_id.clone();
     let span_id_clone = span_id.clone();
     let parent_span_id_clone = parent_span_id.clone();
@@ -156,6 +159,7 @@ pub async fn openai_proxy_handler(
     tokio::spawn(async move {
         save_trace_and_span(
             &db_clone,
+            Some(client_clone),
             &trace_id_clone,
             &span_id_clone,
             parent_span_id_clone.as_deref(),
@@ -265,6 +269,7 @@ pub async fn anthropic_proxy_handler(
     let end_time = Utc::now();
     
     let db_clone = state.db.clone();
+    let client_clone = state.http_client.clone();
     let trace_id_clone = trace_id.clone();
     let span_id_clone = span_id.clone();
     let parent_span_id_clone = parent_span_id.clone();
@@ -285,6 +290,7 @@ pub async fn anthropic_proxy_handler(
     tokio::spawn(async move {
         save_trace_and_span(
             &db_clone,
+            Some(client_clone),
             &trace_id_clone,
             &span_id_clone,
             parent_span_id_clone.as_deref(),
@@ -305,7 +311,8 @@ pub async fn anthropic_proxy_handler(
 }
 
 async fn save_trace_and_span(
-    db: &SqlitePool,
+    db: &AnyPool,
+    client: Option<reqwest::Client>,
     trace_id: &str,
     span_id: &str,
     parent_span_id: Option<&str>,
@@ -368,4 +375,41 @@ async fn save_trace_and_span(
     .bind(output)
     .execute(db)
     .await;
+
+    // Dual-write to ClickHouse if client is present
+    if let Some(ref c) = client {
+        let trace_row = json!({
+            "trace_id": trace_id,
+            "project_id": "proj_solas",
+            "name": format!("Proxy Run - {}", model),
+            "start_time": start_time,
+            "status": "OK",
+            "user_id": "usr_default",
+            "session_id": "sess_default",
+            "input": input,
+            "output": output,
+            "metadata": "{}"
+        });
+        crate::db::save_to_clickhouse(c, "traces", trace_row).await;
+
+        let span_row = json!({
+            "span_id": span_id,
+            "trace_id": trace_id,
+            "parent_span_id": parent_span_id.unwrap_or(""),
+            "project_id": "proj_solas",
+            "name": span_name,
+            "span_kind": "LLM",
+            "start_time": start_time,
+            "status": "OK",
+            "model_name": model,
+            "cost": cost,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens,
+            "input": input,
+            "output": output,
+            "metadata": "{}"
+        });
+        crate::db::save_to_clickhouse(c, "spans", span_row).await;
+    }
 }

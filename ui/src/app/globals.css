@@ -1,0 +1,191 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 95%;
+    
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
+    
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+    
+    /* Sleek rose accents */
+    --primary: 343 75% 55%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 343 25% 15%;
+    --secondary-foreground: 343 70% 80%;
+    
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    
+    --accent: 343 45% 20%;
+    --accent-foreground: 343 80% 90%;
+    
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 15%;
+    --ring: 343 75% 55%;
+    
+    --radius: 0.75rem;
+
+    /* Theme colors */
+    --rose-glow: hsla(343, 75%, 55%, 0.15);
+    --rose-border-glow: hsla(343, 75%, 55%, 0.3);
+    
+    /* Glowing states for active items */
+    --glow-active: 28 100% 55%; /* Orange */
+    --glow-warning: 38 100% 50%; /* Yellow-orange */
+    --glow-error: 0 84% 60%; /* Red */
+    --glow-success: 142 72% 50%; /* Green */
+  }
+
+  .light {
+    --background: 343 20% 98%;
+    --foreground: 343 60% 10%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 343 60% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 343 60% 10%;
+    
+    --primary: 343 75% 45%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 343 40% 94%;
+    --secondary-foreground: 343 70% 30%;
+    
+    --muted: 343 20% 92%;
+    --muted-foreground: 343 20% 45%;
+    
+    --accent: 343 50% 90%;
+    --accent-foreground: 343 75% 25%;
+    
+    --destructive: 0 85% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 343 30% 88%;
+    --input: 343 20% 90%;
+    --ring: 343 75% 45%;
+    
+    --rose-glow: hsla(343, 75%, 45%, 0.08);
+    --rose-border-glow: hsla(343, 75%, 45%, 0.2);
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+    font-family: 'Outfit', sans-serif;
+  }
+  
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    overflow-x: hidden;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Glassmorphism styling */
+.glass-panel {
+  background: rgba(20, 20, 20, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.light .glass-panel {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.glass-card-glow {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), 
+              0 0 1px 1px var(--rose-border-glow);
+}
+
+/* Glowing text & lights */
+.glow-text-rose {
+  text-shadow: 0 0 10px hsla(343, 75%, 55%, 0.5),
+               0 0 20px hsla(343, 75%, 55%, 0.2);
+}
+
+.light .glow-text-rose {
+  text-shadow: 0 0 10px hsla(343, 75%, 45%, 0.3);
+}
+
+/* Connection wires flow animation */
+@keyframes wireFlow {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes wireGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px var(--glow-color, #f97316));
+  }
+  50% {
+    filter: drop-shadow(0 0 6px var(--glow-color, #f97316));
+  }
+}
+
+.wire-active {
+  stroke-dasharray: 6, 6;
+  animation: wireFlow 1.2s linear infinite, wireGlow 2s ease-in-out infinite;
+}
+
+.wire-dimmed {
+  opacity: 0.25;
+  filter: grayscale(80%);
+}
+
+.status-dot-glow {
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Slide in transitions */
+.slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

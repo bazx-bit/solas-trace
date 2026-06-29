@@ -2,6 +2,8 @@
 target/
 target_example/
 node_modules/
+.next/
+ui/.next/
 
 # SQLite database files (created at runtime)
 data/

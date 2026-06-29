@@ -6,7 +6,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sqlx::{SqlitePool, Row};
+use sqlx::{AnyPool, Row};
 use std::sync::Arc;
 use uuid::Uuid;
 use chrono::Utc;
@@ -230,7 +230,7 @@ pub async fn collect_otlp_traces(
     (StatusCode::OK, Json(serde_json::json!({ "status": "ok", "spans_ingested": inserted_count })))
 }
 
-async fn save_otlp_span(db: &SqlitePool, span: &Value) -> Result<(), sqlx::Error> {
+async fn save_otlp_span(db: &AnyPool, span: &Value) -> Result<(), sqlx::Error> {
     let trace_id = span.get("traceId").and_then(|t| t.as_str()).unwrap_or("").to_string();
     let span_id = span.get("spanId").and_then(|t| t.as_str()).unwrap_or("").to_string();
     let parent_span_id = span.get("parentSpanId").and_then(|t| t.as_str()).map(|s| s.to_string());
@@ -282,12 +282,14 @@ async fn save_otlp_span(db: &SqlitePool, span: &Value) -> Result<(), sqlx::Error
         .fetch_one(db)
         .await?;
 
+    let trace_name = format!("OTLP Run - {}", name);
+
     if trace_exists.0 == 0 {
         sqlx::query(
             "INSERT INTO traces (trace_id, name, start_time, status) VALUES (?, ?, ?, 'OK')"
         )
         .bind(&trace_id)
-        .bind(format!("OTLP Run - {}", name))
+        .bind(&trace_name)
         .bind(start_time.to_rfc3339())
         .execute(db)
         .await?;
@@ -299,19 +301,55 @@ async fn save_otlp_span(db: &SqlitePool, span: &Value) -> Result<(), sqlx::Error
     )
     .bind(&span_id)
     .bind(&trace_id)
-    .bind(parent_span_id)
-    .bind(name)
-    .bind(kind)
+    .bind(&parent_span_id)
+    .bind(&name)
+    .bind(&kind)
     .bind(start_time.to_rfc3339())
     .bind(end_time.to_rfc3339())
-    .bind(model)
+    .bind(&model)
     .bind(cost)
     .bind(input_tokens)
     .bind(output_tokens)
-    .bind(input)
-    .bind(output)
+    .bind(&input)
+    .bind(&output)
     .execute(db)
     .await?;
+
+    // Dual-write to ClickHouse
+    let client = reqwest::Client::new();
+    let trace_row = serde_json::json!({
+        "trace_id": trace_id,
+        "project_id": "proj_solas",
+        "name": trace_name,
+        "start_time": start_time.to_rfc3339(),
+        "status": "OK",
+        "user_id": "usr_default",
+        "session_id": "sess_default",
+        "input": input.as_deref().unwrap_or(""),
+        "output": output.as_deref().unwrap_or(""),
+        "metadata": "{}"
+    });
+    crate::db::save_to_clickhouse(&client, "traces", trace_row).await;
+
+    let span_row = serde_json::json!({
+        "span_id": span_id,
+        "trace_id": trace_id,
+        "parent_span_id": parent_span_id.as_deref().unwrap_or(""),
+        "project_id": "proj_solas",
+        "name": name,
+        "span_kind": kind,
+        "start_time": start_time.to_rfc3339(),
+        "status": "OK",
+        "model_name": model.as_deref().unwrap_or(""),
+        "cost": cost,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": input_tokens + output_tokens,
+        "input": input.as_deref().unwrap_or(""),
+        "output": output.as_deref().unwrap_or(""),
+        "metadata": "{}"
+    });
+    crate::db::save_to_clickhouse(&client, "spans", span_row).await;
 
     Ok(())
 }

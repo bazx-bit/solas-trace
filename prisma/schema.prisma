@@ -1,0 +1,474 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTH & IDENTITY (5 models)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model User {
+  id            String   @id @default(cuid()) @db.VarChar
+  email         String   @unique @db.VarChar
+  emailVerified Boolean  @default(false) @map("email_verified")
+  name          String?  @db.VarChar
+  avatarUrl     String?  @map("avatar_url") @db.VarChar
+  password      String?  @db.VarChar
+  role          String?  @db.VarChar
+  locale        String?  @default("en") @db.VarChar
+  timezone      String?  @default("UTC") @db.VarChar
+  banned        Boolean?
+  banReason     String?  @map("ban_reason") @db.VarChar
+  banExpires    DateTime? @map("ban_expires") @db.Timestamp(6)
+  lastLoginAt   DateTime? @map("last_login_at") @db.Timestamp(6)
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime @updatedAt @db.Timestamp(6)
+
+  accounts      Account[]
+  sessions      Session[]
+  invites       Invite[]
+  memberships   WorkspaceMember[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Account {
+  id                    String    @id @default(cuid()) @db.VarChar
+  userId                String    @map("user_id") @db.VarChar
+  accountId             String    @map("account_id") @db.VarChar
+  providerId            String    @map("provider_id") @db.VarChar
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamp(6)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamp(6)
+  scope                 String?   @db.VarChar
+  idToken               String?   @map("id_token")
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamp(6)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, providerId], map: "uq_account_provider")
+  @@index([userId], map: "ix_account_user_id")
+  @@map("accounts")
+}
+
+model Session {
+  id             String   @id @default(cuid()) @db.VarChar
+  userId         String   @map("user_id") @db.VarChar
+  token          String   @unique @db.VarChar
+  expiresAt      DateTime @map("expires_at") @db.Timestamp(6)
+  ipAddress      String?  @map("ip_address") @db.VarChar
+  userAgent      String?  @map("user_agent") @db.VarChar
+  impersonatedBy String?  @map("impersonated_by") @db.VarChar
+  createdAt      DateTime @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime @updatedAt @db.Timestamp(6)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "ix_session_user_id")
+  @@map("sessions")
+}
+
+model Verification {
+  id         String   @id @default(cuid()) @db.VarChar
+  identifier String   @db.VarChar
+  value      String   @db.VarChar
+  expiresAt  DateTime @map("expires_at") @db.Timestamp(6)
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime @updatedAt @db.Timestamp(6)
+
+  @@index([identifier], map: "ix_verification_identifier")
+  @@map("verifications")
+}
+
+model ApiToken {
+  id          String    @id @default(cuid()) @db.VarChar
+  name        String    @db.VarChar
+  tokenHash   String    @unique @map("token_hash") @db.VarChar
+  tokenHint   String    @map("token_hint") @db.VarChar
+  scopes      String[]  @default(["read", "write"])
+  projectId   String    @map("project_id") @db.VarChar
+  expiresAt   DateTime? @map("expires_at") @db.Timestamp(6)
+  lastUsedAt  DateTime? @map("last_used_at") @db.Timestamp(6)
+  lastUsedIp  String?   @map("last_used_ip") @db.VarChar
+  rateLimit   Int       @default(1000) @map("rate_limit")
+  usageCount  Int       @default(0) @map("usage_count")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId], map: "ix_api_token_project_id")
+  @@map("api_tokens")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MULTI-TENANCY (3 models)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Workspace {
+  id           String    @id @default(cuid()) @db.VarChar
+  name         String    @db.VarChar
+  slug         String    @unique @db.VarChar
+  description  String?
+  plan         String    @default("community") @db.VarChar
+  logoUrl      String?   @map("logo_url") @db.VarChar
+  settings     Json?
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  members          WorkspaceMember[]
+  invites          Invite[]
+  projects         Project[]
+  modelProviders   ModelProvider[]
+  aiSessions       AiChatSession[]
+  githubInstalls   GitHubInstallation[]
+  slackIntegration SlackIntegration?
+  webhooks         Webhook[]
+  auditLogs        AuditLog[]
+  notifications    Notification[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String     @id @default(cuid()) @db.VarChar
+  workspaceId String     @map("workspace_id") @db.VarChar
+  userId      String     @map("user_id") @db.VarChar
+  role        MemberRole
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId], map: "uq_workspace_user")
+  @@index([workspaceId], map: "ix_ws_member_workspace_id")
+  @@index([userId], map: "ix_ws_member_user_id")
+  @@map("workspace_members")
+}
+
+model Invite {
+  id              String     @id @default(cuid()) @db.VarChar
+  email           String     @db.VarChar
+  workspaceId     String     @map("workspace_id") @db.VarChar
+  role            MemberRole
+  invitedByUserId String?    @map("invited_by_user_id") @db.VarChar
+  message         String?
+  status          String     @default("pending") @db.VarChar
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  invitedBy       User?      @relation(fields: [invitedByUserId], references: [id])
+  workspace       Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([email, workspaceId], map: "uq_invite_email_workspace")
+  @@index([workspaceId], map: "ix_invite_workspace_id")
+  @@map("invites")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PROJECT & API KEYS (1 model — ApiToken above)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Project {
+  id            String    @id @default(cuid()) @db.VarChar
+  workspaceId   String    @map("workspace_id") @db.VarChar
+  name          String    @db.VarChar
+  description   String?
+  color         String    @default("#f97316") @db.VarChar
+  traceTtlDays  Int?      @map("trace_ttl_days")
+  environment   String    @default("development") @db.VarChar
+  framework     String?   @db.VarChar
+  settings      Json?
+  deleteTime    DateTime? @map("delete_time") @db.Timestamp(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  // RCA config
+  rcaModel      String?   @map("rca_model") @db.VarChar
+  rcaProvider   String?   @map("rca_provider") @db.VarChar
+
+  workspace     Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  apiTokens     ApiToken[]
+  detectors     Detector[]
+  alertConfigs  DetectorAlertConfig[]
+  rcas          DetectorRca[]
+  aiSessions    AiChatSession[]
+  dashboardWidgets DashboardWidget[]
+
+  @@index([workspaceId], map: "ix_project_workspace_id")
+  @@map("projects")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DETECTORS — LLM-as-Judge Evaluation System (4 models)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Detector {
+  id                String    @id @default(cuid()) @db.VarChar
+  projectId         String    @map("project_id") @db.VarChar
+  name              String    @db.VarChar
+  description       String?
+  template          String    @db.VarChar
+  prompt            String
+  outputSchema      Json      @map("output_schema")
+  sampleRate        Int       @default(25) @map("sample_rate")
+  enabled           Boolean   @default(true)
+  enableRca         Boolean   @default(true) @map("enable_rca")
+  severity          String    @default("medium") @db.VarChar
+  detectionModel    String?   @map("detection_model") @db.VarChar
+  detectionProvider String?   @map("detection_provider") @db.VarChar
+  // Solas exclusive: chaining
+  chainedDetectorId String?   @map("chained_detector_id") @db.VarChar
+  cooldownMinutes   Int       @default(0) @map("cooldown_minutes")
+  lastTriggeredAt   DateTime? @map("last_triggered_at") @db.Timestamp(6)
+  triggerCount      Int       @default(0) @map("trigger_count")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  trigger     DetectorTrigger?
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId], map: "ix_detector_project_id")
+  @@map("detectors")
+}
+
+model DetectorTrigger {
+  id         String   @id @default(cuid()) @db.VarChar
+  detectorId String   @unique @map("detector_id") @db.VarChar
+  conditions Json
+  actions    Json?
+  detector   Detector @relation(fields: [detectorId], references: [id], onDelete: Cascade)
+
+  @@map("detector_triggers")
+}
+
+model DetectorAlertConfig {
+  id               String   @id @default(cuid()) @db.VarChar
+  projectId        String   @unique @map("project_id") @db.VarChar
+  emailAddresses   String[] @default([]) @map("email_addresses")
+  slackChannelId   String?  @map("slack_channel_id") @db.VarChar
+  slackChannelName String?  @map("slack_channel_name") @db.VarChar
+  discordWebhook   String?  @map("discord_webhook") @db.VarChar
+  pagerdutyKey     String?  @map("pagerduty_key") @db.VarChar
+  webhookUrl       String?  @map("webhook_url") @db.VarChar
+  alertWindow      String   @default("10m") @map("alert_window") @db.VarChar
+  minSeverity      String   @default("medium") @map("min_severity") @db.VarChar
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("detector_alert_configs")
+}
+
+model DetectorRca {
+  id          String    @id @default(cuid()) @db.VarChar
+  findingId   String    @unique @map("finding_id") @db.VarChar
+  projectId   String    @map("project_id") @db.VarChar
+  sessionId   String?   @map("session_id") @db.VarChar
+  status      String    @db.VarChar
+  result      String?
+  rootCause   String?   @map("root_cause")
+  suggestion  String?
+  prUrl       String?   @map("pr_url") @db.VarChar
+  completedAt DateTime? @map("completed_at") @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId], map: "ix_detector_rca_project_id")
+  @@map("detector_rcas")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI ASSISTANT (2 models)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model AiChatSession {
+  id          String      @id @default(cuid()) @db.VarChar
+  projectId   String      @map("project_id") @db.VarChar
+  workspaceId String      @map("workspace_id") @db.VarChar
+  userId      String?     @map("user_id") @db.VarChar
+  title       String?     @db.VarChar
+  status      String      @default("active") @db.VarChar
+  context     Json?
+  metadata    Json?
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  messages    AiChatMessage[]
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([projectId], map: "ix_ai_session_project_id")
+  @@index([workspaceId], map: "ix_ai_session_workspace_id")
+  @@map("ai_chat_sessions")
+}
+
+model AiChatMessage {
+  id           String         @id @default(cuid()) @db.VarChar
+  sessionId    String         @map("session_id") @db.VarChar
+  role         String         @db.VarChar
+  content      String
+  toolCalls    Json?          @map("tool_calls")
+  metadata     Json?
+  model        String?        @db.VarChar
+  provider     String?        @db.VarChar
+  inputTokens  Int?           @map("input_tokens")
+  outputTokens Int?           @map("output_tokens")
+  cost         Decimal?       @map("cost_usd") @db.Decimal(10, 6)
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  session      AiChatSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId], map: "ix_ai_message_session_id")
+  @@map("ai_chat_messages")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MODEL PROVIDERS — BYOK (Bring Your Own Key)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ModelProvider {
+  id                String    @id @default(cuid()) @db.VarChar
+  workspaceId       String    @map("workspace_id") @db.VarChar
+  adapter           String    @db.VarChar
+  provider          String    @db.VarChar
+  keyCipher         String    @map("key_cipher")
+  keyPreview        String    @map("key_preview") @db.VarChar
+  baseUrl           String?   @map("base_url") @db.VarChar
+  customModels      String[]  @default([]) @map("custom_models")
+  withDefaultModels Boolean   @default(true) @map("with_default_models")
+  config            Json?
+  enabled           Boolean   @default(true)
+  createdBy         String    @map("created_by") @db.VarChar
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, provider], map: "uq_model_provider_ws_provider")
+  @@index([workspaceId], map: "ix_model_provider_workspace_id")
+  @@map("model_providers")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INTEGRATIONS (3 models)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model GitHubInstallation {
+  id                String    @id @default(cuid()) @db.VarChar
+  workspaceId       String    @map("workspace_id") @db.VarChar
+  installationId    String    @map("installation_id") @db.VarChar
+  accountLogin      String    @map("account_login") @db.VarChar
+  repositories      String[]  @default([])
+  installedByUserId String?   @map("installed_by_user_id") @db.VarChar
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, installationId], map: "uq_github_install")
+  @@index([workspaceId], map: "ix_github_install_workspace_id")
+  @@map("github_installations")
+}
+
+model SlackIntegration {
+  id                String    @id @default(cuid()) @db.VarChar
+  workspaceId       String    @unique @map("workspace_id") @db.VarChar
+  teamId            String    @map("team_id") @db.VarChar
+  teamName          String    @map("team_name") @db.VarChar
+  botUserId         String    @map("bot_user_id") @db.VarChar
+  botToken          String    @map("bot_token")
+  channelId         String?   @map("channel_id") @db.VarChar
+  channelName       String?   @map("channel_name") @db.VarChar
+  connectedByUserId String?   @map("connected_by_user_id") @db.VarChar
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("slack_integrations")
+}
+
+model Webhook {
+  id          String    @id @default(cuid()) @db.VarChar
+  workspaceId String    @map("workspace_id") @db.VarChar
+  name        String    @db.VarChar
+  url         String    @db.VarChar
+  secret      String?   @db.VarChar
+  events      String[]  @default(["trace.completed", "detector.triggered"])
+  enabled     Boolean   @default(true)
+  lastStatus  Int?      @map("last_status")
+  lastError   String?   @map("last_error")
+  failCount   Int       @default(0) @map("fail_count")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId], map: "ix_webhook_workspace_id")
+  @@map("webhooks")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SOLAS EXCLUSIVE — Audit Log, Notifications, Dashboard Widgets
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model AuditLog {
+  id          String    @id @default(cuid()) @db.VarChar
+  workspaceId String    @map("workspace_id") @db.VarChar
+  userId      String?   @map("user_id") @db.VarChar
+  action      String    @db.VarChar
+  resource    String    @db.VarChar
+  resourceId  String?   @map("resource_id") @db.VarChar
+  details     Json?
+  ipAddress   String?   @map("ip_address") @db.VarChar
+  userAgent   String?   @map("user_agent") @db.VarChar
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id])
+
+  @@index([workspaceId, createdAt], map: "ix_audit_log_ws_time")
+  @@index([userId], map: "ix_audit_log_user_id")
+  @@map("audit_logs")
+}
+
+model Notification {
+  id          String    @id @default(cuid()) @db.VarChar
+  workspaceId String    @map("workspace_id") @db.VarChar
+  userId      String    @map("user_id") @db.VarChar
+  type        String    @db.VarChar
+  title       String    @db.VarChar
+  message     String
+  link        String?   @db.VarChar
+  read        Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read], map: "ix_notification_user_read")
+  @@index([workspaceId], map: "ix_notification_workspace_id")
+  @@map("notifications")
+}
+
+model DashboardWidget {
+  id          String   @id @default(cuid()) @db.VarChar
+  projectId   String   @map("project_id") @db.VarChar
+  type        String   @db.VarChar
+  title       String   @db.VarChar
+  config      Json
+  position    Json
+  size        Json
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId], map: "ix_dashboard_widget_project_id")
+  @@map("dashboard_widgets")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+enum MemberRole {
+  VIEWER
+  MEMBER
+  ADMIN
+  OWNER
+}
