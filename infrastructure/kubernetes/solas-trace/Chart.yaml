@@ -1,0 +1,6 @@
+apiVersion: v2
+name: solas-trace
+description: Helm chart to deploy Solas Trace AI agent observability engine to Kubernetes
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

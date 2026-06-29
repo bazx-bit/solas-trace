@@ -1,0 +1,24 @@
+# solas-trace/docker/Dockerfile.migrate
+# -----------------------------------------------------------------------------
+# Standalone Database Migration Container
+# -----------------------------------------------------------------------------
+FROM rust:1.79-alpine AS builder
+
+RUN apk add --no-cache musl-dev gcc make openssl-dev pkgconfig
+RUN cargo install sqlx-cli --no-default-features --features sqlite
+
+WORKDIR /app
+COPY backend/migrations ./migrations
+
+# -----------------------------------------------------------------------------
+# Runtime Migration Execution
+# -----------------------------------------------------------------------------
+FROM alpine:3.18 AS runtime
+
+WORKDIR /app
+
+COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/sqlx
+COPY --from=builder /app/migrations ./migrations
+
+# Migration script entrypoint
+ENTRYPOINT ["sqlx", "migrate", "run", "--database-url"]

@@ -1,0 +1,48 @@
+# solas-trace/docker/Dockerfile.detector
+# -----------------------------------------------------------------------------
+# Stage 1: Build (Dependencies & ML/AI Models)
+# Isolated Python container for Anomaly Detection and Embeddings
+# -----------------------------------------------------------------------------
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+RUN pip install uv
+
+# Copy uv lock files for deterministic, extremely fast builds
+COPY requirements.txt ./
+
+# We use uv to sync dependencies without creating a virtualenv in the builder
+# and install them into the system site-packages for the runner
+RUN uv pip install --system -r requirements.txt
+
+# Copy ML detector source code
+COPY backend/detector ./detector
+
+# -----------------------------------------------------------------------------
+# Stage 2: Runner
+# -----------------------------------------------------------------------------
+FROM python:3.12-slim AS runner
+
+WORKDIR /app
+
+# Non-root user for extreme security in production
+RUN addgroup --system --gid 1001 detectorgroup && \
+    adduser --system --uid 1001 detectoruser
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /app/detector ./detector
+
+# Download specific HuggingFace models during build time to avoid runtime spikes
+# (Simulated via environment variables for caching)
+ENV SENTENCE_TRANSFORMERS_HOME=/app/.cache
+RUN mkdir -p /app/.cache && chown -R detectoruser:detectorgroup /app/.cache
+
+USER detectoruser
+
+ENV PYTHONPATH="/app"
+ENV WORKER_MODE="anomaly_detection"
+
+# Start the Celery/Background task worker for the detector
+CMD ["celery", "-A", "detector.celery_app", "worker", "--loglevel=info", "--concurrency=4"]

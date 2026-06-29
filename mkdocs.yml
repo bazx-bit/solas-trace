@@ -1,0 +1,107 @@
+site_name: Solas Trace
+site_description: Blazing fast, Rust-native AI Agent observability & tracing platform
+site_url: https://solas-trace.dev
+repo_name: solas-trace
+repo_url: https://github.com/solas-trace/solas-trace
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  logo: assets/logo.svg
+  favicon: assets/favicon.png
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - header.autohide
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search:
+      lang: en
+  - minify:
+      minify_html: true
+  - mermaid2
+
+markdown_extensions:
+  - admonition
+  - abbr
+  - attr_list
+  - def_list
+  - footnotes
+  - meta
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Quickstart: getting-started/quickstart.md
+    - Architecture: architecture.md
+    - Self-Hosting: developer/self-hosting.md
+  - Core Tracing:
+    - OTLP Ingestion: tracing/otlp.md
+    - Proxy Mode: tracing/proxy.md
+    - Cost Tracking: tracing/cost-tracking.md
+    - Security & RBAC: tracing/security.md
+  - AI Agents:
+    - Root Cause Analysis (RCA): ai-agent/rca.md
+    - Self-Healing Pipelines: ai-agent/self-healing.md
+  - Integrations:
+    - Overview: integrations/overview.md
+    - Python SDKs: integrations/python.md
+    - Rust Native: integrations/rust.md
+    - TypeScript: integrations/typescript.md

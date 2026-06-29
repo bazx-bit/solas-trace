@@ -1,0 +1,58 @@
+# solas-trace/docker/Dockerfile.backend
+# -----------------------------------------------------------------------------
+# Stage 1: Chef (Dependency Caching Layer)
+# Uses cargo-chef to compute a recipe of dependencies for aggressive caching
+# -----------------------------------------------------------------------------
+FROM rust:1.79-alpine AS chef
+RUN apk add --no-cache musl-dev gcc make openssl-dev pkgconfig
+RUN cargo install cargo-chef
+WORKDIR /app
+
+# -----------------------------------------------------------------------------
+# Stage 2: Planner (Generate Recipe)
+# -----------------------------------------------------------------------------
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# -----------------------------------------------------------------------------
+# Stage 3: Builder (Compile Dependencies & Application)
+# -----------------------------------------------------------------------------
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies first to maximize layer caching
+RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
+
+# Copy full source and build the actual application
+COPY . .
+RUN cargo build --release --target x86_64-unknown-linux-musl --bin solas-trace-backend
+
+# Strip binary to reduce size (typically from ~100MB to ~15MB)
+RUN strip /app/target/x86_64-unknown-linux-musl/release/solas-trace-backend
+
+# -----------------------------------------------------------------------------
+# Stage 4: Runtime (Distroless / Scratch)
+# Zero surface area for vulnerabilities, unprivileged execution
+# -----------------------------------------------------------------------------
+FROM scratch AS runtime
+
+# Create an unprivileged user id mapping
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
+
+# Copy CA certificates for reqwest HTTPS calls
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Copy the stripped, statically linked binary
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/solas-trace-backend /usr/local/bin/solas-trace-backend
+
+# Use non-root user
+USER 1000:1000
+
+# Metadata and ports
+EXPOSE 8080
+ENV PORT=8080
+ENV DATABASE_URL="sqlite:data/solas-trace.db"
+
+# Startup
+ENTRYPOINT ["/usr/local/bin/solas-trace-backend"]

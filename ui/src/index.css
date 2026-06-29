@@ -1,0 +1,170 @@
+/* Solas Trace - Dark Industrial Wire-Flow Theme */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg-primary: #0a0c10;
+  --bg-secondary: #12151c;
+  --bg-tertiary: #1a1e28;
+  --bg-card: rgba(18, 21, 28, 0.85);
+  
+  --border-color: rgba(255, 120, 50, 0.08);
+  --border-active: rgba(255, 120, 50, 0.5);
+  
+  --text-primary: #eaedf2;
+  --text-secondary: #8a919e;
+  --text-muted: #555c6a;
+  
+  --accent-orange: #ff6b2c;
+  --accent-red: #ff3d3d;
+  --accent-warm: #ff8a50;
+  --accent-ember: #ff4d00;
+  --accent-green: #00e676;
+  --accent-dim: #3a3d44;
+  --accent-blue: #ff6b2c;
+  --accent-cyan: #ff8a50;
+  --accent-purple: #c084fc;
+  
+  --glow-orange: 0 0 20px rgba(255, 107, 44, 0.4), 0 0 60px rgba(255, 107, 44, 0.1);
+  --glow-red: 0 0 20px rgba(255, 61, 61, 0.4), 0 0 60px rgba(255, 61, 61, 0.1);
+  --glow-green: 0 0 15px rgba(0, 230, 118, 0.3);
+  --glow-dim: none;
+  
+  --glass-bg: rgba(18, 21, 28, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.04);
+  --glass-blur: blur(20px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+/* Glass Panel */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-orange), var(--accent-ember));
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 44, 0.25);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-orange);
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+.btn-secondary:hover {
+  border-color: var(--accent-orange);
+  box-shadow: 0 0 15px rgba(255, 107, 44, 0.08);
+}
+
+/* Glows */
+.glow-blue { box-shadow: var(--glow-orange); }
+.glow-red { box-shadow: var(--glow-red); }
+
+/* Code */
+.code-block {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background-color: #080a0e !important;
+  color: #c9cdd4;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 14px;
+  overflow: auto;
+  line-height: 1.65;
+}
+
+/* Graph Nodes */
+.graph-node {
+  border-left: 3px solid var(--accent-orange);
+  transition: all 0.25s ease;
+}
+.graph-node.active {
+  background-color: rgba(255, 107, 44, 0.06);
+  border-color: var(--accent-warm);
+  box-shadow: var(--glow-orange);
+}
+.graph-node:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes wireGlow {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 107, 44, 0.6)); }
+  50% { filter: drop-shadow(0 0 8px rgba(255, 107, 44, 0.9)); }
+}
+
+@keyframes wireFlow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes subtleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}

@@ -1,0 +1,104 @@
+# solas-trace/docker/docker-compose.prod.yml
+version: '3.8'
+
+services:
+  # -------------------------------------------------------------------------
+  # 1. Reverse Proxy (Caddy for Automatic TLS/SSL & HTTP/3)
+  # -------------------------------------------------------------------------
+  caddy:
+    image: caddy:2.7-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      - DOMAIN=${DOMAIN:-solas-trace.local}
+    command: caddy reverse-proxy --from https://${DOMAIN:-localhost} --to http://frontend:8080
+    networks:
+      - solas_network
+    depends_on:
+      - frontend
+
+  # -------------------------------------------------------------------------
+  # 2. Solas Trace Frontend (React/Vite SPA on Nginx)
+  # -------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    image: solas-trace-frontend:latest
+    restart: unless-stopped
+    expose:
+      - "8080"
+    networks:
+      - solas_network
+    depends_on:
+      - backend
+    # Nginx config internally proxies /api to backend:8080
+
+  # -------------------------------------------------------------------------
+  # 3. Solas Trace Backend (Rust Multi-stage Scratch Binary)
+  # -------------------------------------------------------------------------
+  backend:
+    build:
+      context: ../crates/engine
+      dockerfile: ../docker/Dockerfile.backend
+    image: solas-trace-backend:latest
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      - DATABASE_URL=sqlite:data/solas-trace.db
+      - RUST_LOG=solas_trace_backend=info,tower_http=info
+      - SOLAS_EE_LICENSE_KEY=${SOLAS_EE_LICENSE_KEY:-}
+    volumes:
+      - solas_data:/data
+    networks:
+      - solas_network
+
+  # -------------------------------------------------------------------------
+  # 4. Prometheus (Metrics Scraping)
+  # -------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    restart: unless-stopped
+    volumes:
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+    expose:
+      - "9090"
+    networks:
+      - solas_network
+
+  # -------------------------------------------------------------------------
+  # 5. Grafana (Metrics Dashboard)
+  # -------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana-oss:10.1.0
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    expose:
+      - "3000"
+    networks:
+      - solas_network
+    depends_on:
+      - prometheus
+
+networks:
+  solas_network:
+    driver: bridge
+
+volumes:
+  solas_data:
+  prometheus_data:
+  grafana_data:

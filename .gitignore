@@ -1,0 +1,19 @@
+# Build artifacts
+target/
+target_example/
+node_modules/
+
+# SQLite database files (created at runtime)
+data/
+
+# Environment (user secrets)
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,17 @@
+{
+  "name": "04-typescript-openai",
+  "version": "1.0.0",
+  "description": "TypeScript OpenAI proxy example for Solas Trace",
+  "main": "main.ts",
+  "scripts": {
+    "start": "ts-node main.ts"
+  },
+  "dependencies": {
+    "openai": "^4.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

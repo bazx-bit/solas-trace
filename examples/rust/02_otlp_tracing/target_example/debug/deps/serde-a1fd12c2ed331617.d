@@ -1,0 +1,12 @@
+C:\Users\lalla\Downloads\SOCIAL AUTOMATION\opensource_git_project\solas-trace\examples\rust\02_otlp_tracing\target_example\debug\deps\serde-a1fd12c2ed331617.d: C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs C:\Users\lalla\Downloads\SOCIAL\ AUTOMATION\opensource_git_project\solas-trace\examples\rust\02_otlp_tracing\target_example\debug\build\serde-38142dd3d0018dab\out/private.rs
+
+C:\Users\lalla\Downloads\SOCIAL AUTOMATION\opensource_git_project\solas-trace\examples\rust\02_otlp_tracing\target_example\debug\deps\libserde-a1fd12c2ed331617.rmeta: C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs C:\Users\lalla\Downloads\SOCIAL\ AUTOMATION\opensource_git_project\solas-trace\examples\rust\02_otlp_tracing\target_example\debug\build\serde-38142dd3d0018dab\out/private.rs
+
+C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs:
+C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs:
+C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs:
+C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs:
+C:\Users\lalla\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs:
+C:\Users\lalla\Downloads\SOCIAL\ AUTOMATION\opensource_git_project\solas-trace\examples\rust\02_otlp_tracing\target_example\debug\build\serde-38142dd3d0018dab\out/private.rs:
+
+# env-dep:OUT_DIR=C:\\Users\\lalla\\Downloads\\SOCIAL AUTOMATION\\opensource_git_project\\solas-trace\\examples\\rust\\02_otlp_tracing\\target_example\\debug\\build\\serde-38142dd3d0018dab\\out
