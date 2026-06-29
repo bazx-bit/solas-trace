@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/bazx-bit/solas-trace"><img src="https://img.shields.io/github/stars/bazx-bit/solas-trace?style=for-the-badge&color=8b5cf6" alt="GitHub stars" /></a>
-  <a href="https://github.com/bazx-bit/solas-trace/blob/master/LICENSE"><img src="https://img.shields.io/github/license/bazx-bit/solas-trace?style=for-the-badge&color=06b6d4" alt="License" /></a>
+  <a href="https://github.com/bazx-bit/solas-trace/stargazers"><img src="https://img.shields.io/github/stars/bazx-bit/solas-trace?style=for-the-badge&color=8b5cf6&logo=github" alt="GitHub stars" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/bazx-bit/solas-trace?style=for-the-badge&color=06b6d4" alt="License" /></a>
   <img src="https://img.shields.io/badge/Rust-2021-orange?style=for-the-badge&logo=rust" alt="Rust Version" />
   <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=nextdotjs" alt="Next.js Version" />
 </p>
@@ -23,17 +23,19 @@ Instead of navigating heavy, disjointed stacks, Solas Trace packs a high-perform
 
 ---
 
-## 📸 Product Previews
+## 📸 Real Product Screenshots
 
-````carousel
-![Product Mockup](assets/dashboard_preview.png)
-<!-- slide -->
-![Traces Dashboard](assets/traces_dashboard.png)
-<!-- slide -->
-![Metrics & Analytics Graphs](assets/metrics.png)
-<!-- slide -->
-![Interactive Demo WebP Run](assets/demo_run.webp)
-````
+### 🕸️ Traces & Agent Swarm Topology
+Visualize your agent executions, tool invocation trees, and trace hierarchies dynamically.
+<p align="center">
+  <img src="assets/traces_dashboard.png" width="100%" alt="Traces & Agent Swarm Topology" />
+</p>
+
+### 📊 Performance & Cost Metrics
+Monitor token counts, latency distributions, aggregate costs, and error rates across all projects.
+<p align="center">
+  <img src="assets/metrics.png" width="100%" alt="Performance & Cost Metrics" />
+</p>
 
 ---
 
