@@ -1,123 +1,168 @@
-# Solas Trace: Open-Source AI Agent Observability & Self-Healing Platform
+<p align="center">
+  <img src="assets/logo.png" width="280" alt="Solas Trace Logo" />
+</p>
 
-Solas Trace is an advanced, developer-first, zero-config agent observability and self-healing workspace. It compiles a lightweight Rust proxy server (supporting OpenAI & Anthropic), a SQLite analytics engine, and a glassmorphic React dashboard into a production-grade monitoring toolkit.
+<p align="center">
+  <strong>The open-source, high-performance AI Agent Observability, Tracing, and Self-Healing Platform.</strong>
+</p>
 
-Compared to heavy stacks like Clickhouse/Celery/Redis, Solas Trace provides a **local-first, zero-dependency** single-binary deployment option, with advanced features like **interactive sandbox replays** and **LLM-as-a-Judge Root Cause Analysis (RCA)**.
-
----
-
-## 1. Project Directory Structure
-
-```text
-solas-trace/
-├── backend/                  # Rust Axum + SQLx (SQLite) Backend
-│   ├── src/
-│   │   ├── db.rs             # SQLite connection & migration schemas
-│   │   ├── handlers.rs       # Trace routers, replay engine, & RCA AI judges
-│   │   ├── proxy.rs          # Transparent reverse proxy (OpenAI & Anthropic)
-│   │   └── main.rs           # Axum router setup & server bootstrap
-│   ├── Cargo.toml
-│   └── Dockerfile            # Multi-stage production Rust build
-├── frontend/                 # Vite + React + Lucide Icons Dashboard
-│   ├── src/
-│   │   ├── App.jsx           # Dark-mode dashboard, curved DAG trees, split-diff sandbox
-│   │   ├── main.jsx
-│   │   └── index.css         # Premium HSL colors & glassmorphic styling
-│   ├── package.json
-│   ├── vite.config.js
-│   └── Dockerfile            # Optimized build packaged inside Nginx server
-├── examples/                 # Curated client integration patterns
-│   ├── python/               # Python agent examples
-│   │   ├── 01_react_weather_agent/
-│   │   ├── 02_multi_agent_swarm/
-│   │   └── 03_self_healing_demo/
-│   ├── typescript/           # JS/TS agent examples
-│   │   ├── 01_openai_client/
-│   │   └── 02_vercel_ai_sdk/
-│   ├── rust/                 # High-performance Rust agent examples
-│   │   ├── 01_openai_proxy/
-│   │   └── 02_otlp_tracing/
-│   └── README.md             # Curated examples index
-├── .env.example              # Server environment variable templates
-├── docker-compose.yml        # Docker production stack composer
-├── run.ps1                   # Automation launch script (Windows)
-└── Cargo.toml                # Root workspace configuration
-```
+<p align="center">
+  <a href="https://github.com/bazx-bit/solas-trace"><img src="https://img.shields.io/github/stars/bazx-bit/solas-trace?style=for-the-badge&color=8b5cf6" alt="GitHub stars" /></a>
+  <a href="https://github.com/bazx-bit/solas-trace/blob/master/LICENSE"><img src="https://img.shields.io/github/license/bazx-bit/solas-trace?style=for-the-badge&color=06b6d4" alt="License" /></a>
+  <img src="https://img.shields.io/badge/Rust-2021-orange?style=for-the-badge&logo=rust" alt="Rust Version" />
+  <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=nextdotjs" alt="Next.js Version" />
+</p>
 
 ---
 
-## 2. Core Architecture
+## 🌌 Overview
+
+**Solas Trace** is a developer-first, zero-config, low-latency agent observability and trace-debugging workspace. Written in **Rust (Axum)** for raw speed and **Next.js 15** for a premium user experience, it acts as a transparent proxy and OpenTelemetry receiver to capture LLM runs, multi-agent conversations, loop steps, cost metrics, and error traces.
+
+Instead of navigating heavy, disjointed stacks, Solas Trace packs a high-performance tracing engine, interactive sandbox replays, and LLM-as-a-Judge Root Cause Analysis (RCA) into a modern, beautifully cohesive tool.
+
+---
+
+## 📸 Product Previews
+
+````carousel
+![Product Mockup](assets/dashboard_preview.png)
+<!-- slide -->
+![Traces Dashboard](assets/traces_dashboard.png)
+<!-- slide -->
+![Metrics & Analytics Graphs](assets/metrics.png)
+<!-- slide -->
+![Interactive Demo WebP Run](assets/demo_run.webp)
+````
+
+---
+
+## ✨ Core Features
+
+*   **⚡ Zero-SDK Transparent Proxy:** Intercept and record all completions and messages by changing only the `base_url` in your favorite OpenAI/Anthropic python or node clients. No wrappers, no complex setups.
+*   **🕸️ Interactive Agent Topologies:** Render complex multi-agent swarms as logical DAG (Directed Acyclic Graph) trees showing step relationships, database calls, tool calls, and model outputs.
+*   **🛠️ Side-by-Side Sandbox Replays:** Edit prompts from failed runs inside the UI and re-simulate agent steps directly through the proxy to verify prompt fixes in real-time.
+*   **🧠 Self-Healing Root Cause Analysis (RCA):** Click a failed span to invoke an LLM-as-a-judge that evaluates error logs, identifies failures (hallucinations, parsing bugs, rate limits), and drafts proposed code fixes.
+*   **📊 Enterprise Infrastructure:** Ready-to-go Docker stack integrating **PostgreSQL** (metadata and auth), **ClickHouse** (millions of traces/second), **Redis** (queues), and **MinIO** (S3 artifact log storage).
+
+---
+
+## 🏗️ Architecture
 
 ```mermaid
 graph TD
-    ClientOpenAI[OpenAI Python Client] -->|base_url proxy| Proxy[Rust Axum Proxy]
-    ClientClaude[Anthropic Claude SDK] -->|messages proxy| Proxy
-    SDK[OpenTelemetry OTLP Exporter] -->|gRPC / HTTP JSON| OTLP[OTLP Collector Route]
+    ClientOpenAI["OpenAI SDK Client"] -->|base_url Proxy| Proxy["Rust Axum Engine (:8000)"]
+    ClientClaude["Anthropic Claude SDK"] -->|messages Proxy| Proxy
+    OTLP["OTLP Exporter / SDKs"] -->|HTTP/gRPC Traces| Proxy
     
-    Proxy -->|Log Spans| DB[(SQLite Database)]
-    OTLP -->|Transform & Save| DB
+    Proxy -->|Save Metadata / Auth| DB[("PostgreSQL (:5434)")]
+    Proxy -->|Log Spans & Metrics| CH[("ClickHouse (:8124)")]
+    Proxy -->|Queue Tasks / Rate Limits| Redis[("Redis (:6380)")]
+    Proxy -->|Store Payload Artifacts| MinIO[("MinIO S3 (:9092)")]
     
-    Proxy -->|Forward Calls| OpenAI_API[api.openai.com]
-    Proxy -->|Forward Calls| Anthropic_API[api.anthropic.com]
+    Proxy -->|Forward Proxy Calls| OpenAI_API["api.openai.com"]
+    Proxy -->|Forward Proxy Calls| Anthropic_API["api.anthropic.com"]
     
-    Dashboard[React Client App] -->|Query Traces| Backend[Axum REST Endpoints]
-    Backend -->|Read / Write| DB
-    
-    Dashboard -->|POST /replay| Replay[Sandbox Replay Engine]
-    Replay -->|Test Prompt Fixes| OpenAI_API
-    
-    Dashboard -->|POST /rca| RCA[AI RCA Agent]
-    RCA -->|Audit Logs| OpenAI_API
+    Dashboard["Next.js 15 Dashboard (:3000)"] -->|Query Traces & RCA| Proxy
+    Dashboard -->|Read Metadata & Auth| DB
 ```
 
 ---
 
-## 3. High-Value Capabilities
+## 📂 Project Structure
 
-### A. Zero-Config Transparent Proxy
-Simply change your model provider client configuration to route all prompt operations. No SDKs to wrap, and no complex OpenTelemetry environment setup:
-```python
-# OpenAI proxy configuration example
-client = OpenAI(
-    api_key="your_api_key",
-    base_url="http://localhost:8080/v1"
-)
+```text
+solas-trace/
+├── assets/                     # Sleek corporate dark logos and screenshots
+├── crates/
+│   └── engine/                 # Rust Axum + SQLx backend proxy engine
+│       ├── src/
+│       │   ├── db.rs           # Multi-database pool connections (Postgres)
+│       │   ├── handlers.rs     # OTLP ingestion, RCA report generators, replays
+│       │   ├── proxy.rs        # Reverse proxy interceptors for LLMs
+│       │   └── main.rs         # Axum server bootstrap
+│       └── Cargo.toml
+├── ui/                         # Next.js 15 + Tailwind CSS v4 + Prisma Dashboard
+│   ├── src/
+│   │   ├── app/                # App router pages (Traces, Analytics, Detectors)
+│   │   ├── components/         # Premium glassmorphic cards and topology graphs
+│   │   └── lib/                # Better-Auth clients & utilities
+│   ├── prisma/                 # Prisma client relational schema files
+│   ├── package.json
+│   └── tailwind.config.ts
+├── infrastructure/             # Docker compose companion assets
+│   ├── clickhouse/migrations/  # SQL schemas for trace and span analytics
+│   ├── prometheus/             # Prometheus metrics target configurations
+│   └── grafana/                # Grafana dashboards for platform tracking
+├── docker-compose.yml          # Full dev/prod services environment composer
+├── run.ps1                     # PowerShell automation script for local boot
+└── Cargo.toml                  # Cargo workspace manifest
 ```
-
-### B. Interactive Sandbox Replays
-When an agent step fails due to bad input structure, rate limits, or hallucinations, open the **Self-Healing Sandbox Playground** drawer:
-* View a side-by-side comparison of the **Original Prompt** vs your updated **Edit Prompt**.
-* Run live simulations via the proxy to verify the output without restarting your python script.
-* Export the fix to save it directly to source code templates.
-
-### C. Self-Healing Root Cause Analysis (RCA)
-For failed agent runs, trigger the **Self-Healing RCA** module. Solas Trace uses LLM-as-a-judge logs auditing to generate:
-* A markdown report containing diagnosis details.
-* Proposed code refactoring templates.
-* Fallback configuration advice.
 
 ---
 
-## 4. Run & Deploy
+## 🚀 Quick Start
 
-### A. Local Setup (Zero-Dependencies)
-Ensure you have Rust and Node.js installed on your machine.
-
-1. **Clone and copy environment file:**
-   ```bash
-   cp .env.example .env
-   ```
-2. **Start the application (Windows automated launcher):**
-   ```powershell
-   ./run.ps1
-   ```
-   * *This compiles the backend on `localhost:8080`.*
-   * *This installs dependencies and starts Vite frontend server on `localhost:3000`.*
-
-### B. Docker Compose Deployment (Production-Ready)
-To spin up the entire database, proxy, and frontend server environment:
+### 1. Spin up the Core Infrastructure
+Ensure you have **Docker Desktop** installed and running. Start the supporting database and cache stack:
 ```bash
-docker-compose up -d --build
+docker compose up -d
 ```
-* **Dashboard URL:** `http://localhost:3000`
-* **OTLP / API Proxy Endpoint:** `http://localhost:8080`
+> [!NOTE]
+> This starts PostgreSQL, ClickHouse, Redis, MinIO S3, Prometheus, and Grafana.
+
+### 2. Configure Environment Variables
+Copy the template variables file into a live environment file:
+```bash
+cp .env.example .env
+```
+
+### 3. Migrate and Sync Relational Schema
+Generate the client libraries and migrate user/workspace metadata tables to PostgreSQL:
+```bash
+cd ui
+npm install
+npm run db:generate
+npm run db:push
+```
+
+### 4. Run the Platform
+Run the automated PowerShell startup script at the root:
+```powershell
+./run.ps1
+```
+*   **Next.js Dashboard:** `http://localhost:3000` (Redirects to `/auth/sign-in` — sign up to start!)
+*   **Rust Proxy Port:** `http://localhost:8000/v1`
+*   **ClickHouse Native Ingestion:** `http://localhost:8124`
+
+---
+
+## 🔌 Integration Examples
+
+### Python Client Integration
+Simply adjust the `base_url` of your standard client. All trace, prompt payload, token cost, and latency data will be automatically logged to Solas Trace:
+
+```python
+from openai import OpenAI
+
+# Zero-SDK Trace Hook Setup
+client = OpenAI(
+    api_key="your_openai_api_key",
+    base_url="http://localhost:8000/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a swarm agent node."},
+        {"role": "user", "content": "Fetch latest weather metrics."}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 📜 License
+Solas Trace is released under the [MIT License](LICENSE).
